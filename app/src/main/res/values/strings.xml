@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShutterMute</string>
+    <string name="tile_label">シャッター音ミュート</string>
+    <string name="tile_desc_on">マナーモードでシャッター音オフ: ON</string>
+    <string name="tile_desc_off">マナーモードでシャッター音オフ: OFF</string>
+    <string name="state_on">ミュート許可: ON（マナーモードで消音）</string>
+    <string name="state_off">ミュート許可: OFF（シャッター音強制）</string>
+</resources>
