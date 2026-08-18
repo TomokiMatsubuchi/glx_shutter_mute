@@ -1,47 +1,57 @@
 package com.shuttermute
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.provider.Settings
+import com.shuttermute.privilege.PrivilegeEngine
+import com.shuttermute.privilege.WriteChannel
 
 /**
- * Controls the "forced shutter sound" Global setting:
- *   csc_pref_camera_forced_shutter_sound_key
- *   value = 1  -> shutter sound is always forced on (carrier / CSC default)
- *   value = 0  -> shutter sound respects the mute / vibrate mode
+ * Galaxy CSC flag that forces the camera shutter sound.
  *
- * Writes use the Settings.Global API, which requires the WRITE_SECURE_SETTINGS
- * permission. That permission cannot be self-granted by a normal app; it is
- * granted once via adb and then persists, so the app works standalone after
- * that one-time setup.
+ * The real key lives in Settings.System (not Global):
+ *   csc_pref_camera_forced_shuttersound_key
+ *   1 = always play shutter sound
+ *   0 = follow silent / vibrate mode
+ *
+ * Reading works for a normal app. Writing needs a privileged channel:
+ * Settings API (older One UI), root, or an in-app wireless ADB session.
+ * Shizuku is not required.
  */
 object ShutterSetting {
 
-    private const val KEY = "csc_pref_camera_forced_shutter_sound_key"
-    private const val VALUE_FORCED_ON = 1
-    private const val VALUE_ALLOW_MUTE = 0
+    const val KEY = "csc_pref_camera_forced_shuttersound_key"
+    const val LEGACY_KEY = "csc_pref_camera_forced_shutter_sound_key"
 
-    private const val PERMISSION = "android.permission.WRITE_SECURE_SETTINGS"
+    const val VALUE_FORCED_ON = 1
+    const val VALUE_ALLOW_MUTE = 0
 
-    /** True when the app holds the permission needed to write the setting. */
-    fun hasPermission(context: Context): Boolean =
-        context.checkCallingOrSelfPermission(PERMISSION) == PackageManager.PERMISSION_GRANTED
+    private val KEYS = listOf(KEY, LEGACY_KEY)
 
-    private fun readRaw(context: Context): Int? {
-        val v = Settings.Global.getInt(context.contentResolver, KEY, Int.MIN_VALUE)
-        return if (v == Int.MIN_VALUE) null else v
+    fun isMuteAllowed(context: Context): Boolean =
+        readRaw(context) == VALUE_ALLOW_MUTE
+
+    fun readRaw(context: Context): Int? {
+        val resolver = context.contentResolver
+        for (key in KEYS) {
+            val system = Settings.System.getInt(resolver, key, Int.MIN_VALUE)
+            if (system != Int.MIN_VALUE) return system
+            val global = Settings.Global.getInt(resolver, key, Int.MIN_VALUE)
+            if (global != Int.MIN_VALUE) return global
+        }
+        return null
     }
 
-    private fun writeRaw(context: Context, value: Int): Boolean = try {
-        Settings.Global.putInt(context.contentResolver, KEY, value)
-    } catch (e: SecurityException) { false }
+    suspend fun setMuteAllowed(context: Context, allowed: Boolean): WriteChannel? =
+        PrivilegeEngine.write(context, if (allowed) VALUE_ALLOW_MUTE else VALUE_FORCED_ON)
 
-    /** True when the shutter sound is currently allowed to be muted in silent mode. */
-    fun isMuteAllowed(context: Context): Boolean = readRaw(context) == VALUE_ALLOW_MUTE
+    suspend fun toggle(context: Context): WriteChannel? =
+        setMuteAllowed(context, !isMuteAllowed(context))
 
-    /** Sets whether the shutter sound should be muted in silent mode. */
-    fun setMuteAllowed(context: Context, allowed: Boolean): Boolean =
-        writeRaw(context, if (allowed) VALUE_ALLOW_MUTE else VALUE_FORCED_ON)
+    fun settingsPutCommand(allowed: Boolean): String {
+        val value = if (allowed) VALUE_ALLOW_MUTE else VALUE_FORCED_ON
+        return "settings put system $KEY $value"
+    }
 
-    fun toggle(context: Context): Boolean = setMuteAllowed(context, !isMuteAllowed(context))
+    fun adbPutCommand(allowed: Boolean): String =
+        "adb shell ${settingsPutCommand(allowed)}"
 }
