@@ -1,15 +1,9 @@
 package com.shuttermute.privilege
 
 import android.content.Context
-import com.flyfishxu.kadb.Kadb
-import com.flyfishxu.kadb.cert.KadbCert
-import com.flyfishxu.kadb.cert.KadbCertPolicy
-import com.flyfishxu.kadb.cert.OkioFilePrivateKeyStore
 import com.shuttermute.ShutterSetting
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okio.Path.Companion.toPath
-import java.io.File
 
 object AdbClient {
 
@@ -18,22 +12,8 @@ object AdbClient {
     private const val KEY_PORT = "port"
     private const val KEY_PAIRED = "paired"
 
-    @Volatile
-    private var configured = false
-
     fun ensureIdentity(context: Context) {
-        if (configured) return
-        synchronized(this) {
-            if (configured) return
-            val keyFile = File(context.applicationContext.filesDir, "adb/adbkey.pem")
-            keyFile.parentFile?.mkdirs()
-            KadbCert.configure(
-                store = OkioFilePrivateKeyStore(keyFile.absolutePath.toPath()),
-                policy = KadbCertPolicy(),
-            )
-            KadbCert.ensureReady()
-            configured = true
-        }
+        LocalAdbManager.get(context)
     }
 
     fun hasPaired(context: Context): Boolean =
@@ -47,52 +27,60 @@ object AdbClient {
         return AdbEndpoint(host, port, pairing = false)
     }
 
-    suspend fun pair(host: String, port: Int, pairingCode: String) {
+    suspend fun pair(context: Context, host: String, port: Int, pairingCode: String) {
         withContext(Dispatchers.IO) {
-            Kadb.pair(host, port, pairingCode.trim())
+            val manager = LocalAdbManager.get(context)
+            val ok = manager.pair(host, port, pairingCode.trim())
+            check(ok) { "pairing rejected" }
         }
     }
 
     suspend fun write(context: Context, value: Int, endpoints: List<AdbEndpoint>): Boolean {
-        ensureIdentity(context)
-        val candidates = candidateHosts(context, endpoints)
-        for (endpoint in candidates) {
-            val ok = runCatching { writeOn(endpoint, value) }.getOrDefault(false)
-            if (ok) {
-                remember(context, endpoint)
-                return true
-            }
-        }
-        return false
-    }
-
-    suspend fun probe(context: Context, endpoints: List<AdbEndpoint>): Boolean {
-        ensureIdentity(context)
-        val candidates = candidateHosts(context, endpoints)
-        for (endpoint in candidates) {
-            val ok = runCatching {
-                Kadb.create(endpoint.host, endpoint.port, connectTimeout = 2_000, socketTimeout = 3_000).use { kadb ->
-                    kadb.shell("echo ok").allOutput.contains("ok")
-                }
-            }.getOrDefault(false)
-            if (ok) {
-                remember(context, endpoint)
-                return true
-            }
-        }
-        return false
-    }
-
-    private fun writeOn(endpoint: AdbEndpoint, value: Int): Boolean {
-        Kadb.create(endpoint.host, endpoint.port, connectTimeout = 3_000, socketTimeout = 5_000).use { kadb ->
+        return withContext(Dispatchers.IO) {
+            val manager = LocalAdbManager.get(context)
+            val connected = connect(context, manager, endpoints) ?: return@withContext false
+            val allowed = value == ShutterSetting.VALUE_ALLOW_MUTE
             val command = buildString {
-                append(ShutterSetting.settingsPutCommand(value == ShutterSetting.VALUE_ALLOW_MUTE))
+                append(ShutterSetting.settingsPutCommand(allowed))
                 append("; settings put global ${ShutterSetting.KEY} $value")
                 append("; settings get system ${ShutterSetting.KEY}")
             }
-            val response = kadb.shell(command)
-            val output = response.allOutput
-            return output.contains(value.toString())
+            val output = shell(manager, command)
+            val ok = output.contains(value.toString())
+            if (ok) remember(context, connected)
+            ok
+        }
+    }
+
+    suspend fun probe(context: Context, endpoints: List<AdbEndpoint>): Boolean {
+        return withContext(Dispatchers.IO) {
+            val manager = LocalAdbManager.get(context)
+            val connected = connect(context, manager, endpoints)
+            if (connected != null) remember(context, connected)
+            connected != null
+        }
+    }
+
+    private fun connect(
+        context: Context,
+        manager: LocalAdbManager,
+        live: List<AdbEndpoint>,
+    ): AdbEndpoint? {
+        if (runCatching { manager.autoConnect(context, 3_000) }.getOrDefault(false)) {
+            return lastEndpoint(context) ?: live.firstOrNull { !it.pairing } ?: AdbEndpoint("127.0.0.1", 5555, false)
+        }
+        val candidates = candidateHosts(context, live)
+        for (endpoint in candidates) {
+            val ok = runCatching { manager.connect(endpoint.host, endpoint.port) }.getOrDefault(false)
+            if (ok) return endpoint
+        }
+        return null
+    }
+
+    private fun shell(manager: LocalAdbManager, command: String): String {
+        val stream = manager.openStream("shell:$command")
+        stream.openInputStream().use { input ->
+            return input.bufferedReader().readText()
         }
     }
 

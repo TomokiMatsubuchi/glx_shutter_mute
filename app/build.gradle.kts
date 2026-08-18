@@ -41,6 +41,9 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+        jniLibs {
+            pickFirsts += "**/libc++_shared.so"
+        }
     }
 }
 
@@ -58,7 +61,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("com.flyfishxu:kadb:2.1.3")
-    implementation("com.squareup.okio:okio:3.9.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("com.github.MuntashirAkon:libadb-android:3.1.1")
+    implementation("org.conscrypt:conscrypt-android:2.5.3")
+    implementation("org.bouncycastle:bcpkix-jdk15to18:1.81")
 }

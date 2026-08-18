@@ -140,7 +140,7 @@ class ShutterMuteViewModel(application: Application) : AndroidViewModel(applicat
             _state.update { it.copy(setupBusy = true, error = null, message = null) }
             val pairResult = runCatching {
                 AdbClient.ensureIdentity(appContext)
-                AdbClient.pair(target.host, target.port, pairingCode)
+                AdbClient.pair(appContext, target.host, target.port, pairingCode)
             }
             if (pairResult.isFailure) {
                 _state.update {
