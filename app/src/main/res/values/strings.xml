@@ -6,4 +6,55 @@
     <string name="tile_desc_off">マナーモードでシャッター音オフ: OFF</string>
     <string name="state_on">ミュート許可: ON（マナーモードで消音）</string>
     <string name="state_off">ミュート許可: OFF（シャッター音強制）</string>
+
+    <string name="hero_on_title">消音できます</string>
+    <string name="hero_on_body">マナーモードまたはバイブのとき、シャッター音は鳴りません。</string>
+    <string name="hero_off_title">シャッター音は強制オン</string>
+    <string name="hero_off_body">着信音の設定に関係なく、撮影時に音が鳴ります。</string>
+    <string name="toggle_label">マナーモードで消音する</string>
+
+    <string name="setup_needed_title">初回セットアップ</string>
+    <string name="setup_needed_body">Galaxy の保護設定を書き換えるため、一度だけワイヤレスデバッグかパソコンの ADB が必要です。Shizuku は使いません。</string>
+    <string name="setup_needed_cta">セットアップを始める</string>
+
+    <string name="ready_title">切り替えできます</string>
+    <string name="ready_direct">この端末の設定 API で書き込んでいます。</string>
+    <string name="ready_root">root 経由で書き込んでいます。</string>
+    <string name="ready_adb">ワイヤレスデバッグ経由で書き込んでいます。</string>
+
+    <string name="how_title">しくみ</string>
+    <string name="how_silent">消音されるのはマナーモード／バイブのときだけです。</string>
+    <string name="how_ringer">着信音モードでは、これまで通りシャッター音が鳴ります。</string>
+    <string name="how_update">One UI のアップデート後は、値が戻ることがあります。</string>
+    <string name="how_no_shizuku">Shizuku は不要です。このアプリ単体で完結します。</string>
+
+    <string name="tips_title">ヒント</string>
+    <string name="tips_tile">クイック設定に「シャッター音ミュート」タイルを追加すると、通知パネルから切り替えできます。</string>
+    <string name="tips_blocker">Galaxy の「自動ブロッカー」がオンだとワイヤレスデバッグが失敗します。セットアップ中だけオフにしてください。</string>
+    <string name="open_developer_options">開発者向けオプション</string>
+    <string name="refresh_status">状態を再読み込み</string>
+
+    <string name="setup_title">書き込み方法を選ぶ</string>
+    <string name="setup_intro">おすすめはスマホだけで完了するワイヤレスデバッグです。パソコンがある場合は、コマンドを1回実行するだけでも構いません。</string>
+    <string name="setup_phone_title">スマホだけで設定</string>
+    <string name="setup_phone_steps">1. 自動ブロッカーをオフ\n2. 開発者向けオプションで「ワイヤレスデバッグ」をオン\n3. 「ペア設定コードでデバイスをペア設定」を開く\n4. 6桁のコードを入力してペアリング</string>
+    <string name="setup_waiting_pairing">ペアリング用ポートを探しています。ペア設定コード画面を開いたままにしてください。</string>
+    <string name="setup_found_pairing">ペアリング先を見つけました: %1$s</string>
+    <string name="setup_pairing_code">6桁のペア設定コード</string>
+    <string name="setup_manual_endpoint">見つからないとき: IP:ポート</string>
+    <string name="open_wireless_debugging">ワイヤレスデバッグを開く</string>
+    <string name="setup_pair_cta">ペアリングして消音する</string>
+    <string name="setup_pairing">接続しています…</string>
+    <string name="setup_pc_title">パソコンで設定</string>
+    <string name="setup_pc_body">USB デバッグをオンにして端末を接続し、次のコマンドを実行します。OS 更新まで設定は残ります。</string>
+    <string name="copy_command">コマンドをコピー</string>
+
+    <string name="error_write_failed">変更できませんでした。セットアップを完了してください。</string>
+    <string name="error_pairing_code">6桁のペア設定コードを入力してください。</string>
+    <string name="error_pairing_port">ペアリング用の IP:ポート が見つかりません。ワイヤレスデバッグの画面に表示されている値を入力してください。</string>
+    <string name="error_pair_failed">ペアリングに失敗しました。コードとポートを確認し、自動ブロッカーがオフか見てください。</string>
+    <string name="error_write_after_pair">ペアリングはできましたが、設定の書き込みに失敗しました。ワイヤレスデバッグをオンのまま再試行してください。</string>
+    <string name="message_updated">設定を更新しました。</string>
+    <string name="message_paired">ペアリングできました。マナーモードで消音できます。</string>
+    <string name="message_copied">コピーしました。</string>
 </resources>
