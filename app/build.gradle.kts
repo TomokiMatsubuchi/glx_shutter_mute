@@ -7,12 +7,27 @@ android {
     namespace = "com.shuttermute"
     compileSdk = 34
 
+    val appVersionName = (findProperty("appVersionName") as String?) ?: "1.1"
+    val appVersionCode = (findProperty("appVersionCode") as String?)?.toIntOrNull() ?: 2
+    val releaseKeystoreFile = System.getenv("RELEASE_KEYSTORE_FILE")
+
     defaultConfig {
         applicationId = "com.shuttermute"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = appVersionCode
+        versionName = appVersionName
+    }
+
+    if (!releaseKeystoreFile.isNullOrBlank()) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseKeystoreFile)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -22,6 +37,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = if (!releaseKeystoreFile.isNullOrBlank()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
     compileOptions {
