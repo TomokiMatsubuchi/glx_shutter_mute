@@ -37,27 +37,31 @@ object AdbClient {
 
     suspend fun write(context: Context, value: Int, endpoints: List<AdbEndpoint>): Boolean {
         return withContext(Dispatchers.IO) {
-            val manager = LocalAdbManager.get(context)
-            val connected = connect(context, manager, endpoints) ?: return@withContext false
-            val allowed = value == ShutterSetting.VALUE_ALLOW_MUTE
-            val command = buildString {
-                append(ShutterSetting.settingsPutCommand(allowed))
-                append("; settings put global ${ShutterSetting.KEY} $value")
-                append("; settings get system ${ShutterSetting.KEY}")
-            }
-            val output = shell(manager, command)
-            val ok = output.contains(value.toString())
-            if (ok) remember(context, connected)
-            ok
+            runCatching {
+                val manager = LocalAdbManager.get(context)
+                val connected = connect(context, manager, endpoints) ?: return@runCatching false
+                val allowed = value == ShutterSetting.VALUE_ALLOW_MUTE
+                val command = buildString {
+                    append(ShutterSetting.settingsPutCommand(allowed))
+                    append("; settings put global ${ShutterSetting.KEY} $value")
+                    append("; settings get system ${ShutterSetting.KEY}")
+                }
+                val output = shell(manager, command)
+                val ok = output.contains(value.toString())
+                if (ok) remember(context, connected)
+                ok
+            }.getOrDefault(false)
         }
     }
 
     suspend fun probe(context: Context, endpoints: List<AdbEndpoint>): Boolean {
         return withContext(Dispatchers.IO) {
-            val manager = LocalAdbManager.get(context)
-            val connected = connect(context, manager, endpoints)
-            if (connected != null) remember(context, connected)
-            connected != null
+            runCatching {
+                val manager = LocalAdbManager.get(context)
+                val connected = connect(context, manager, endpoints)
+                if (connected != null) remember(context, connected)
+                connected != null
+            }.getOrDefault(false)
         }
     }
 

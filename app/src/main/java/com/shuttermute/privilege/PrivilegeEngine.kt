@@ -2,6 +2,8 @@ package com.shuttermute.privilege
 
 import android.content.Context
 import com.shuttermute.ShutterSetting
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object PrivilegeEngine {
 
@@ -44,10 +46,10 @@ object PrivilegeEngine {
         return if (ShutterSetting.readRaw(context) == value) WriteChannel.DIRECT else null
     }
 
-    private fun writeViaRoot(value: Int): Boolean {
-        if (!RootShell.isAvailable()) return false
+    private suspend fun writeViaRoot(value: Int): Boolean = withContext(Dispatchers.IO) {
+        if (!RootShell.isAvailable()) return@withContext false
         val key = ShutterSetting.KEY
         val command = "settings put system $key $value; settings put global $key $value"
-        return RootShell.exec(command) != null
+        RootShell.exec(command) != null
     }
 }
