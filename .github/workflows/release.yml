@@ -107,7 +107,6 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Import release keystore
-        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
@@ -115,6 +114,10 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
+          if [[ -z "$RELEASE_KEYSTORE_BASE64" ]]; then
+            echo "RELEASE_KEYSTORE_BASE64 is not set; signing with the debug keystore."
+            exit 0
+          fi
           echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$HOME/release.jks"
           {
             echo "RELEASE_KEYSTORE_FILE=$HOME/release.jks"
