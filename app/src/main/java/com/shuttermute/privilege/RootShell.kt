@@ -14,16 +14,14 @@ internal object RootShell {
         return markers.any { File(it).canExecute() || File(it).exists() }
     }
 
-    fun exec(command: String): String? {
-        val process = runCatching {
-            ProcessBuilder("su", "-c", command)
-                .redirectErrorStream(true)
-                .start()
-        }.getOrNull() ?: return null
-        return process.inputStream.bufferedReader().use { reader ->
+    fun exec(command: String): String? = runCatching {
+        val process = ProcessBuilder("su", "-c", command)
+            .redirectErrorStream(true)
+            .start()
+        process.inputStream.bufferedReader().use { reader ->
             val output = reader.readText()
             val code = process.waitFor()
             output.takeIf { code == 0 }
         }
-    }
+    }.getOrNull()
 }
